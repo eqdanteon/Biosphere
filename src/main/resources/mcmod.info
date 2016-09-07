@@ -1,0 +1,15 @@
+[
+{
+  "modid": "biosphere",
+  "name": "Gameovr Biosphere Mod",
+  "description": "Biosphere world generation type.",
+  "version": "1.0 ALPHA",
+  "mcversion": "[1.9,)",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["EQDanteon"],
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
