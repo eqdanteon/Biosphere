@@ -33,6 +33,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         WORLD_MAX_Y = world.getHeight();
 
         bufferBlockState = ModConfig.bufferBlock;
+        SphereManager spheremanager = new SphereManager();
     }
 
     @Override
@@ -42,6 +43,8 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         if (chunkX > maxX) maxX = chunkX;
         if (chunkZ < minZ) minZ = chunkZ;
         if (chunkZ > maxZ) maxZ = chunkZ;
+
+        rand.nextInt()
 
         ChunkPrimer chunkprimer = new ChunkPrimer();
 
@@ -62,7 +65,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     public void populate(int chunkX, int chunkZ) {
         if (!(world.getSpawnPoint().toLong() == new BlockPos(0,0,0).toLong())) {
             if (world.getChunkFromChunkCoords(chunkX,chunkZ) == world.getChunkFromBlockCoords(world.getSpawnPoint())) {
-                generateSphere(chunkX, chunkZ);
+                //generateSphere(chunkX, chunkZ);
                 System.out.println(minX + ", " + minZ + ", " + maxX + ", " + maxZ);
                 System.out.println(world.getSpawnPoint());
             }
@@ -87,7 +90,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     @Override
     public void recreateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
-        System.out.println(world.getSpawnPoint());
+
     }
 
     public void setWorldFloor(ChunkPrimer chunkprimer) {
@@ -115,9 +118,11 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         for (int blockX = 0; blockX < 16; ++blockX) {
             for (int blockZ = 0; blockZ < 16; ++blockZ) {
                 for (int blockY = 0; blockY < WORLD_MAX_Y; ++blockY) {
-                    if (sphere.getDistanceFromOrigin((chunkX * 16) + blockX, blockY, (chunkZ * 16) +blockZ) == 0) chunk.setBlockState(new BlockPos(blockX,blockY,blockZ),Blocks.GRASS.getDefaultState());
-                    if (sphere.getDistanceFromOrigin((chunkX * 16) + blockX, blockY, (chunkZ * 16) +blockZ) == sphere.getRadius()){
+                    if (sphere.getDistanceFromOrigin((chunkX * 16) + blockX, blockY, (chunkZ * 16) + blockZ) == sphere.getRadius()){
                         chunk.setBlockState(new BlockPos(blockX,blockY,blockZ),Blocks.GLASS.getDefaultState());
+                    }
+                    if (sphere.getDistanceFromOrigin((chunkX * 16) + blockX, blockY, (chunkZ * 16) + blockZ) < sphere.getRadius() && blockY < sphere.getOrigin().getY() - 2) {
+                        chunk.setBlockState(new BlockPos(blockX,blockY,blockZ),Blocks.STONE.getDefaultState());
                     }
                 }
             }
