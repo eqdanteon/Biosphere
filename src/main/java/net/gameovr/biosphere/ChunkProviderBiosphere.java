@@ -12,6 +12,8 @@ import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkGenerator;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -20,6 +22,10 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     private World world;
     private int WORLD_MAX_Y;
     private IBlockState bufferBlockState;
+    private int minX;
+    private int maxX;
+    private int minZ;
+    private int maxZ;
 
     public ChunkProviderBiosphere(World world, long seed) {
         this.world = world;
@@ -27,11 +33,16 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         WORLD_MAX_Y = world.getHeight();
 
         bufferBlockState = ModConfig.bufferBlock;
-        System.out.println("Spawn point:" + world.getSpawnPoint().toString());
     }
 
     @Override
     public Chunk provideChunk(int chunkX, int chunkZ) {
+
+        if (chunkX < minX) minX = chunkX;
+        if (chunkX > maxX) maxX = chunkX;
+        if (chunkZ < minZ) minZ = chunkZ;
+        if (chunkZ > maxZ) maxZ = chunkZ;
+
         ChunkPrimer chunkprimer = new ChunkPrimer();
 
         if (ModConfig.worldFloor) {
@@ -49,8 +60,13 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     @Override
     public void populate(int chunkX, int chunkZ) {
-
-        generateSphere(chunkX, chunkZ);
+        if (!(world.getSpawnPoint().toLong() == new BlockPos(0,0,0).toLong())) {
+            if (world.getChunkFromChunkCoords(chunkX,chunkZ) == world.getChunkFromBlockCoords(world.getSpawnPoint())) {
+                generateSphere(chunkX, chunkZ);
+                System.out.println(minX + ", " + minZ + ", " + maxX + ", " + maxZ);
+                System.out.println(world.getSpawnPoint());
+            }
+        }
     }
 
     @Override
@@ -71,7 +87,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     @Override
     public void recreateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
-
+        System.out.println(world.getSpawnPoint());
     }
 
     public void setWorldFloor(ChunkPrimer chunkprimer) {
@@ -93,11 +109,16 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     }
 
     public void generateSphere(int chunkX, int chunkZ) {
+        Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
+        Sphere sphere = new Sphere(world.getSpawnPoint(),15);
+
         for (int blockX = 0; blockX < 16; ++blockX) {
             for (int blockZ = 0; blockZ < 16; ++blockZ) {
-                if (chunkX == 0 && chunkZ == 0) {
-                    world.setBlockState(new BlockPos(blockX, WORLD_MAX_Y/4 , blockZ), Blocks.STONE.getDefaultState());
-                    world.setSpawnPoint(new BlockPos(0,(WORLD_MAX_Y/4) + 1,0));
+                for (int blockY = 0; blockY < WORLD_MAX_Y; ++blockY) {
+                    if (sphere.getDistanceFromOrigin((chunkX * 16) + blockX, blockY, (chunkZ * 16) +blockZ) == 0) chunk.setBlockState(new BlockPos(blockX,blockY,blockZ),Blocks.GRASS.getDefaultState());
+                    if (sphere.getDistanceFromOrigin((chunkX * 16) + blockX, blockY, (chunkZ * 16) +blockZ) == sphere.getRadius()){
+                        chunk.setBlockState(new BlockPos(blockX,blockY,blockZ),Blocks.GLASS.getDefaultState());
+                    }
                 }
             }
         }
