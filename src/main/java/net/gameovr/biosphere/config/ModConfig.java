@@ -19,6 +19,10 @@ public class ModConfig {
     public static IBlockState bufferBlock;
     public static int bufferThickness = 1;
 
+    // Sphere Generation
+    public static int maxSphereRadius = 32;
+    public static int minDistanceApart = 128;
+
     public static void processConfig(Configuration config) {
 
         // World
@@ -36,5 +40,19 @@ public class ModConfig {
             bufferBlock = GameRegistry.findBlock(bufferLiquidParts[0], bufferLiquidParts[1]).getDefaultState();
         }
         bufferThickness = config.get(config.CATEGORY_GENERAL, "bufferThickness", bufferThickness, "Thickness of world floor buffer").getInt(bufferThickness);
+
+
+        // make sure to validate user input; especially for values used in algorithms
+        configValueValidation();
     }
+
+    private static void configValueValidation() {
+
+        // min value for maxSphereRadius
+        maxSphereRadius = (maxSphereRadius < 16) ? 16 : maxSphereRadius;
+        // max value for maxSphereRadius
+        maxSphereRadius = (maxSphereRadius > 127) ? 127 : maxSphereRadius;
+
+    }
+
 }
