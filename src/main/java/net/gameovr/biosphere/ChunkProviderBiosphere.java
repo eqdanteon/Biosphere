@@ -109,24 +109,38 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     }
 
     public void drawSpheres(int chunkX, int chunkZ) {
-        Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
-        for (int blockX = 0; blockX < 16; ++blockX) {
-            for (int blockZ = 0; blockZ < 16; ++blockZ) {
-                for (int blockY = 0; blockY < WORLD_MAX_Y; ++blockY) {
-                    BlockPos currentBlockPos = new BlockPos(chunkX * 16 + blockX, blockY, chunkZ * 16 + blockZ);
-                    Sphere nearestSphere = spheremanager.getNearestSphere(currentBlockPos);
 
-                    //TODO: figure out Exception in server tick loop sometimes
-                    if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) == nearestSphere.getRadius()){
-                        chunk.setBlockState(new BlockPos(blockX, blockY, blockZ),Blocks.GLASS.getDefaultState());
-                    }
-                    if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) < nearestSphere.getRadius() && blockY < nearestSphere.getOrigin().getY() - 2) {
-                        chunk.setBlockState(new BlockPos(blockX, blockY, blockZ),Blocks.STONE.getDefaultState());
+        Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
+
+        // divide chunk into 16 subchunks in y direction, index as iy
+        for (int iy = 0; iy < 16; ++iy) {
+
+            BlockPos referenceBlock = new BlockPos((chunkX * 16) + 8, (iy * 16) + 8, (chunkZ * 16) + 8);
+            Sphere nearestSphere = spheremanager.getNearestSphere(referenceBlock);
+
+            // subchunk is 16 blocks high in y direction, index as jy
+            for (int jy = 0; jy < 16; ++jy) {
+
+                // subchunk is 16 blocks long in x direction, index as jx
+                for (int jx = 0; jx < 16; ++jx) {
+
+                    // subchunk is 16 blocks long in z direction, index as jz
+                    for (int jz = 0; jz < 16; ++jz) {
+
+                        int currentBlockX = (chunkX * 16) + jx;
+                        int currentBlockY = (iy * 16) + jy;
+                        int currentBlockZ = (chunkZ * 16) + jz;
+
+                        //TODO: figure out Exception in server tick loop sometimes
+                        if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) == nearestSphere.getRadius()) {
+                            chunk.setBlockState(new BlockPos(jx, currentBlockY, jz), Blocks.GLASS.getDefaultState());
+                        }
+                        if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
+                            chunk.setBlockState(new BlockPos(jx, currentBlockY, jz), Blocks.STONE.getDefaultState());
+                        }
                     }
                 }
             }
         }
     }
-
-
 } //End Class
