@@ -2,6 +2,7 @@ package net.gameovr.biosphere.proxy;
 
 import net.gameovr.biosphere.Biosphere;
 import net.gameovr.biosphere.BiosphereWorldType;
+import net.gameovr.biosphere.SphereManager;
 import net.gameovr.biosphere.config.ModConfig;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;

@@ -3,6 +3,7 @@ package net.gameovr.biosphere;
 import net.gameovr.biosphere.config.ModConfig;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -12,8 +13,6 @@ import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkGenerator;
 
 import javax.annotation.Nullable;
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -32,15 +31,23 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
         bufferBlockState = ModConfig.bufferBlock;
 
+        //Generate list of spheres
+        SphereManager sphereManager = new SphereManager();
+        sphereManager.GenerateSpheres(seed);
+
     }
 
     public Chunk provideChunk(int chunkX, int chunkZ) {
 
         ChunkPrimer chunkprimer = new ChunkPrimer();
 
+        // start off by adding basic terrain: air, water, bedrock
         setWorldFloorOptions(chunkprimer, ModConfig.worldFloor, ModConfig.worldFloorBuffer);
 
-        generateSpheres(chunkX, chunkZ);
+
+        // Add spheres to world
+        drawSpheres(chunkX, chunkZ, chunkprimer);
+
 
         Chunk chunk = new Chunk(world, chunkprimer, chunkX, chunkZ);
 
@@ -50,7 +57,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     public void populate(int chunkX, int chunkZ) {
 
-        drawSpheres(chunkX, chunkZ);
+
     }
 
     public boolean generateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
@@ -83,50 +90,89 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         }
     }
 
-    public void generateSpheres(int chunkX, int chunkZ) {
+    public void drawSpheres(int chunkX, int chunkZ, ChunkPrimer chunkPrimer) {
 
 
-        int radius = rand.nextInt((ModConfig.maxSphereRadius-16)+1)+16;
-        int yPosMin = 2 + radius;
-        int yPosMax = 254 - radius;
+        // divide chunk into 16 subchunks in y direction, index as iy
+        for (int iy = 0; iy < 16; ++iy) {
 
-        int blockX = (chunkX * 16) + rand.nextInt(16);
-        int blockZ = (chunkZ * 16) + rand.nextInt(16);
-        int blockY = rand.nextInt((yPosMax-yPosMin)+1)+ yPosMin;
+            BlockPos referenceBlock = new BlockPos((chunkX * 16) + 8, (iy * 16) + 8, (chunkZ * 16) + 8);
+            Sphere nearestSphere = spheremanager.getNearestSphere(referenceBlock);
 
-        BlockPos randomPos = new BlockPos(blockX, blockY, blockZ);
-        Sphere nearestSphere;
+            // subchunk is 16 blocks high in y direction, index as jy
+            for (int jy = 0; jy < 16; ++jy) {
 
-        if (!spheremanager.spheres.isEmpty()) {
-            nearestSphere = spheremanager.getNearestSphere(randomPos);
-            if (nearestSphere.getDistanceFromOrigin(randomPos) > ModConfig.minDistanceApart) {
-                spheremanager.spheres.add(new Sphere(randomPos, radius));
-            }
-        } else {
-            Sphere sphere = new Sphere(randomPos, radius);
-            spheremanager.spheres.add(sphere);
-        }
-    }
+                // subchunk is 16 blocks long in x direction, index as jx
+                for (int jx = 0; jx < 16; ++jx) {
 
-    public void drawSpheres(int chunkX, int chunkZ) {
-        Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
-        for (int blockX = 0; blockX < 16; ++blockX) {
-            for (int blockZ = 0; blockZ < 16; ++blockZ) {
-                for (int blockY = 0; blockY < WORLD_MAX_Y; ++blockY) {
-                    BlockPos currentBlockPos = new BlockPos(chunkX * 16 + blockX, blockY, chunkZ * 16 + blockZ);
-                    Sphere nearestSphere = spheremanager.getNearestSphere(currentBlockPos);
+                    // subchunk is 16 blocks long in z direction, index as jz
+                    for (int jz = 0; jz < 16; ++jz) {
 
-                    //TODO: figure out Exception in server tick loop sometimes
-                    if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) == nearestSphere.getRadius()){
-                        chunk.setBlockState(new BlockPos(blockX, blockY, blockZ),Blocks.GLASS.getDefaultState());
-                    }
-                    if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) < nearestSphere.getRadius() && blockY < nearestSphere.getOrigin().getY() - 2) {
-                        chunk.setBlockState(new BlockPos(blockX, blockY, blockZ),Blocks.STONE.getDefaultState());
+                        int currentBlockX = (chunkX * 16) + jx;
+                        int currentBlockY = (iy * 16) + jy;
+                        int currentBlockZ = (chunkZ * 16) + jz;
+
+                        //TODO: figure out Exception in server tick loop sometimes
+                        if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) == nearestSphere.getRadius()) {
+                            chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.GLASS.getDefaultState());
+                           // chunk.setBlockState(new BlockPos(jx, currentBlockY, jz), Blocks.GLASS.getDefaultState());
+                        }
+                        if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
+                           //chunk.setBlockState(new BlockPos(jx, currentBlockY, jz), Blocks.STONE.getDefaultState());
+                            chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.STONE.getDefaultState());
+                        }
                     }
                 }
             }
         }
     }
+
+/*    public void drawSpheres(int chunkX, int chunkZ, ChunkPrimer chunkPrimer) {
+
+        //Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
+
+        BlockPos chunkCenter;
+        Sphere nearestSphere = null;
+
+        // Divide chunk into 16 subchunks
+        for (int y = 0; y < 16; ++y) {
+            int yMin = y * 16;
+            int yMax = yMin + 16;
+
+            // this is the Y block range of this section
+            // get the nearest sphere from the y section center
+            chunkCenter = spheremanager.GetCenterBlockFromChunk(chunkX, chunkZ, yMin + 8);
+            nearestSphere = spheremanager.getNearestSphere(chunkCenter);
+
+            // subchunk is 16 blocks high in y direction
+            for (int yPlane = 0; yPlane < 16; ++yPlane) {
+
+                // scan chunk x and z based on block location
+                for (int blockX = 0; blockX < 16; ++blockX) {
+
+                    for (int blockZ = 0; blockZ < 16; ++blockZ) {
+
+                            // current BlockPos based on world block position
+                            BlockPos currentBlockPos = new BlockPos(SphereManager.calcBlockMin(chunkX) + blockX, yPlane, SphereManager.calcBlockMin(chunkZ) + blockZ);
+
+                            //TODO: figure out Exception in server tick loop sometimes
+                            // setBlockState position based on position within chunk
+                            if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) == nearestSphere.getRadius()) {
+                                //chunk.setBlockState(new BlockPos(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()), Blocks.GLASS.getDefaultState());
+                                chunkPrimer.setBlockState(blockX, y*16+yPlane, blockZ, Blocks.GLASS.getDefaultState());
+
+                            }
+                            if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) < nearestSphere.getRadius() && currentBlockPos.getY() < nearestSphere.getOrigin().getY() - 2) {
+                                //chunk.setBlockState(new BlockPos(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()), Blocks.STONE.getDefaultState());
+                                chunkPrimer.setBlockState(blockX, y*16+yPlane, blockZ, Blocks.STONE.getDefaultState());
+                            }
+                    }
+                }
+
+            }
+        }
+
+    }*/
 
 
 } //End Class
