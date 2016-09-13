@@ -115,10 +115,8 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                         //TODO: figure out Exception in server tick loop sometimes
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) == nearestSphere.getRadius()) {
                             chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.GLASS.getDefaultState());
-                           // chunk.setBlockState(new BlockPos(jx, currentBlockY, jz), Blocks.GLASS.getDefaultState());
                         }
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
-                           //chunk.setBlockState(new BlockPos(jx, currentBlockY, jz), Blocks.STONE.getDefaultState());
                             chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.STONE.getDefaultState());
                         }
                     }
