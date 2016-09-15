@@ -14,13 +14,9 @@ public class ModHelper {
     public static final String CLIENT_PROXY_CLASS = "net.gameovr.biosphere.proxy.ClientProxy";
     public static final String SERVER_PROXY_CLASS = "net.gameovr.biosphere.proxy.ServerProxy";
 
-    public static final String DIMENSION_TYPE = "Biosphere";
-    public static final int DIMENSION_ID = 99;
-
     public static void registerEventListeners(){
 
         MinecraftForge.EVENT_BUS.register(new BiosphereEventHandler());
-
     }
 
 }

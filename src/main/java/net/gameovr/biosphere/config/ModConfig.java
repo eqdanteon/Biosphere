@@ -47,7 +47,6 @@ public class ModConfig {
     }
 
     private static void configValueValidation() {
-
         // min value for maxSphereRadius
         maxSphereRadius = (maxSphereRadius < 16) ? 16 : maxSphereRadius;
         // max value for maxSphereRadius

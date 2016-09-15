@@ -147,9 +147,10 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         }
     }
 
-    // Biomes add their top blocks and filler blocks to the primer here
+
     public void replaceBlocksForBiome(int chunkX, int chunkZ, ChunkPrimer primer, Biome[] biomes)
     {
+        // Biomes add their top blocks and filler blocks to the primer here
         if (!net.minecraftforge.event.ForgeEventFactory.onReplaceBiomeBlocks(this, chunkX, chunkZ, primer, this.world)) return;
 
         double d0 = 0.03125D;

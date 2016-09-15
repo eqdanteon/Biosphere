@@ -50,6 +50,7 @@ public class SphereManager {
         }
 
         writeSphereListToDisk();
+
         Biosphere.logger.info("Sphere list created: " + BiosphereWorldType.spheres.size() + " spheres added.");
 
     }
