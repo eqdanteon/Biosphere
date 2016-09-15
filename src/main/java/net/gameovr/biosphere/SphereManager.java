@@ -1,13 +1,13 @@
 package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.config.ModConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.common.MinecraftForge;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Random;
 
 public class SphereManager {
 
@@ -19,7 +19,7 @@ public class SphereManager {
         Sphere closestSphere = null;
         int minDistance = Integer.MAX_VALUE;
 
-        for (Sphere sphere : Biosphere.spheres) {
+        for (Sphere sphere : BiosphereWorldType.spheres) {
             if (sphere.getDistanceFromOrigin(pos) < minDistance) {
                 minDistance = sphere.getDistanceFromOrigin(pos);
                 closestSphere = sphere;
@@ -31,14 +31,14 @@ public class SphereManager {
 
     public void GenerateSpheres(long seed) {
 
-        System.out.println("Starting Generate Spheres...");
+        Biosphere.logger.info("Starting Generate Spheres...");
 
         rand = new Random(seed);
         // bounds of world
-        int left = -100;
-        int right = 100;
-        int top = -100;
-        int bottom = 100;
+        int left = -10;
+        int right = 10;
+        int top = -10;
+        int bottom = 10;
 
         for (int x = left; x < right+1; x++){
             rand.nextInt();
@@ -49,7 +49,8 @@ public class SphereManager {
 
         }
 
-        System.out.println("Sphere list created.");
+        writeSphereListToDisk();
+        Biosphere.logger.info("Sphere list created: " + BiosphereWorldType.spheres.size() + " spheres added.");
 
     }
 
@@ -67,42 +68,41 @@ public class SphereManager {
         BlockPos randomPos = new BlockPos(blockX, blockY, blockZ);
         Sphere nearestSphere;
 
-        if (!Biosphere.spheres.isEmpty()) {
+        if (!BiosphereWorldType.spheres.isEmpty()) {
             nearestSphere = getNearestSphere(randomPos);
-            if (nearestSphere.getDistanceFromOrigin(randomPos) > ModConfig.minDistanceApart) {
-                Biosphere.spheres.add(new Sphere(randomPos, radius));
-                System.out.println("Sphere: " + randomPos.getX() + "," + randomPos.getY() + "," + randomPos.getZ());
+            if (nearestSphere.getDistanceFromOrigin(randomPos) > ModConfig.minDistanceApart + radius) {
+                BiosphereWorldType.spheres.add(new Sphere(randomPos, radius));
             }
         } else {
             Sphere sphere = new Sphere(randomPos, radius);
-            Biosphere.spheres.add(sphere);
-            System.out.println("Sphere: " + randomPos.getX() + "," + randomPos.getY() + "," + randomPos.getZ());
+            BiosphereWorldType.spheres.add(sphere);
         }
 
     }
 
-    public static BlockPos GetCenterBlockFromChunk(int chunkX, int chunkZ, int playerY){
+    private void writeSphereListToDisk(){
 
-        int blockXMax = calcBlockMax(chunkX);
-        int blockZMax = calcBlockMax(chunkZ);
+        try {
+            File file = new File("sphereList.txt");
+            if (!file.exists()) {
+                file.createNewFile();
+            }
 
-        int blockXMin = calcBlockMin(chunkX);
-        int blockZMin = calcBlockMin(chunkZ);
+            FileWriter fw = new FileWriter(file.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
 
-        int centerX = blockXMax - 8;
-        int centerZ = blockZMax - 8;
-        return (new BlockPos(centerX, playerY, centerZ));
+            for(Sphere s : BiosphereWorldType.spheres){
+                bw.write("Sphere: " + s.getOrigin().getX() + "," + s.getOrigin().getY() + "," + s.getOrigin().getZ());
+                bw.newLine();
+            }
+            bw.close();
 
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
     }
 
-
-    public static int calcBlockMin(int chunkCoordinateValue){
-        return (chunkCoordinateValue<<4);
-    }
-
-    public static int calcBlockMax(int chunkCoordinateValue){
-        return (chunkCoordinateValue + 1<<4)-1;
-    }
 
 
 }

@@ -14,14 +14,14 @@ public class ModConfig {
 
     // World
     public static boolean worldFloor = true;
-    public static boolean worldFloorBuffer = true;
+    public static boolean worldFloorBuffer = false;
     public static String bufferLiquid = Blocks.WATER.getRegistryName().toString();
     public static IBlockState bufferBlock;
     public static int bufferThickness = 1;
 
     // Sphere Generation
     public static int maxSphereRadius = 32;
-    public static int minDistanceApart = 128;
+    public static int minDistanceApart = 96;
 
     public static void processConfig(Configuration config) {
 
@@ -51,7 +51,7 @@ public class ModConfig {
         // min value for maxSphereRadius
         maxSphereRadius = (maxSphereRadius < 16) ? 16 : maxSphereRadius;
         // max value for maxSphereRadius
-        maxSphereRadius = (maxSphereRadius > 127) ? 127 : maxSphereRadius;
+        maxSphereRadius = (maxSphereRadius > 126) ? 126 : maxSphereRadius;
 
     }
 

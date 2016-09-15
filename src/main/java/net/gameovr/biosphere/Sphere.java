@@ -2,13 +2,11 @@ package net.gameovr.biosphere;
 
 import net.minecraft.util.math.BlockPos;
 
-import java.awt.*;
-import java.util.ArrayList;
-
 public class Sphere {
 
     public BlockPos origin;
     public int radius;
+
 
     public Sphere(BlockPos origin, int radius) {
         this.origin = origin;

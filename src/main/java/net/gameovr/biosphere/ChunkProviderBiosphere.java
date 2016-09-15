@@ -3,7 +3,6 @@ package net.gameovr.biosphere;
 import net.gameovr.biosphere.config.ModConfig;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -11,6 +10,7 @@ import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkGenerator;
+import net.minecraft.world.gen.NoiseGeneratorPerlin;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -24,6 +24,9 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     private IBlockState bufferBlockState;
     private SphereManager spheremanager = new SphereManager();
 
+    private NoiseGeneratorPerlin stoneNoiseGen;
+    private double[] stoneNoiseArray;
+
     public ChunkProviderBiosphere(World world, long seed) {
         this.world = world;
         rand = new Random(seed);
@@ -34,6 +37,9 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         //Generate list of spheres
         SphereManager sphereManager = new SphereManager();
         sphereManager.GenerateSpheres(seed);
+
+        this.stoneNoiseGen = new NoiseGeneratorPerlin(this.rand, 4);
+        this.stoneNoiseArray = new double[256];
 
     }
 
@@ -48,8 +54,19 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         // Add spheres to world
         drawSpheres(chunkX, chunkZ, chunkprimer);
 
+        // hand over to the biomes for them to set bedrock grass and dirt
+        Biome[] biomes = this.world.getBiomeProvider().getBiomesForGeneration(null, chunkX * 16, chunkZ * 16, 16, 16);
+        this.replaceBlocksForBiome(chunkX, chunkZ, chunkprimer, biomes);
+
 
         Chunk chunk = new Chunk(world, chunkprimer, chunkX, chunkZ);
+
+        byte[] chunkBiomes = chunk.getBiomeArray();
+        for(int i = 0; i < chunkBiomes.length; ++i){
+
+            chunkBiomes[i] = (byte)Biome.getIdForBiome(biomes[i]);
+        }
+        chunk.setBiomeArray(chunkBiomes);
 
         chunk.generateSkylightMap();
         return chunk;
@@ -114,9 +131,14 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
                         //TODO: figure out Exception in server tick loop sometimes
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) == nearestSphere.getRadius()) {
+
                             chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.GLASS.getDefaultState());
+
                         }
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
+                            chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.GRASS.getDefaultState());
+                        }
+                        if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 3) {
                             chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.STONE.getDefaultState());
                         }
                     }
@@ -125,52 +147,22 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         }
     }
 
-/*    public void drawSpheres(int chunkX, int chunkZ, ChunkPrimer chunkPrimer) {
+    // Biomes add their top blocks and filler blocks to the primer here
+    public void replaceBlocksForBiome(int chunkX, int chunkZ, ChunkPrimer primer, Biome[] biomes)
+    {
+        if (!net.minecraftforge.event.ForgeEventFactory.onReplaceBiomeBlocks(this, chunkX, chunkZ, primer, this.world)) return;
 
-        //Chunk chunk = world.getChunkFromChunkCoords(chunkX, chunkZ);
+        double d0 = 0.03125D;
+        this.stoneNoiseArray = this.stoneNoiseGen.getRegion(this.stoneNoiseArray, (double)(chunkX * 16), (double)(chunkZ * 16), 16, 16, d0 * 2.0D, d0 * 2.0D, 1.0D);
 
-        BlockPos chunkCenter;
-        Sphere nearestSphere = null;
-
-        // Divide chunk into 16 subchunks
-        for (int y = 0; y < 16; ++y) {
-            int yMin = y * 16;
-            int yMax = yMin + 16;
-
-            // this is the Y block range of this section
-            // get the nearest sphere from the y section center
-            chunkCenter = spheremanager.GetCenterBlockFromChunk(chunkX, chunkZ, yMin + 8);
-            nearestSphere = spheremanager.getNearestSphere(chunkCenter);
-
-            // subchunk is 16 blocks high in y direction
-            for (int yPlane = 0; yPlane < 16; ++yPlane) {
-
-                // scan chunk x and z based on block location
-                for (int blockX = 0; blockX < 16; ++blockX) {
-
-                    for (int blockZ = 0; blockZ < 16; ++blockZ) {
-
-                            // current BlockPos based on world block position
-                            BlockPos currentBlockPos = new BlockPos(SphereManager.calcBlockMin(chunkX) + blockX, yPlane, SphereManager.calcBlockMin(chunkZ) + blockZ);
-
-                            //TODO: figure out Exception in server tick loop sometimes
-                            // setBlockState position based on position within chunk
-                            if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) == nearestSphere.getRadius()) {
-                                //chunk.setBlockState(new BlockPos(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()), Blocks.GLASS.getDefaultState());
-                                chunkPrimer.setBlockState(blockX, y*16+yPlane, blockZ, Blocks.GLASS.getDefaultState());
-
-                            }
-                            if (nearestSphere.getDistanceFromOrigin(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()) < nearestSphere.getRadius() && currentBlockPos.getY() < nearestSphere.getOrigin().getY() - 2) {
-                                //chunk.setBlockState(new BlockPos(currentBlockPos.getX(), currentBlockPos.getY(), currentBlockPos.getZ()), Blocks.STONE.getDefaultState());
-                                chunkPrimer.setBlockState(blockX, y*16+yPlane, blockZ, Blocks.STONE.getDefaultState());
-                            }
-                    }
-                }
-
+        for (int localX = 0; localX < 16; ++localX)
+        {
+            for (int localZ = 0; localZ < 16; ++localZ)
+            {
+                Biome biome = biomes[localZ + localX * 16];
+                biome.genTerrainBlocks(this.world, this.rand, primer, chunkX * 16 + localX, chunkZ * 16 + localZ, this.stoneNoiseArray[localZ + localX * 16]);
             }
         }
-
-    }*/
-
+    }
 
 } //End Class
