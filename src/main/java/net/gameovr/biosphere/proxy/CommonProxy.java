@@ -27,6 +27,9 @@ public class CommonProxy {
     public void init(FMLInitializationEvent event) {
         Biosphere.biosphereWorldType = new BiosphereWorldType("biosphere");
 
+        DimensionManager.unregisterDimension(0);
+        DimensionType bioOverworld = DimensionType.register("Overworld", "", 0, BiosphereWorldProvider.class, false );
+        DimensionManager.registerDimension(0, bioOverworld);
         ModHelper.registerEventListeners();
 
 
