@@ -1,5 +1,6 @@
 package net.gameovr.biosphere;
 
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldType;
 import net.minecraft.world.chunk.IChunkGenerator;
@@ -15,6 +16,7 @@ public class BiosphereWorldType extends WorldType {
 
     public static ArrayList<Sphere> spheres = new ArrayList<Sphere>();
     public static Random rand;
+    public static BlockPos spawnPoint = null;
 
     @Override
     public IChunkGenerator getChunkGenerator(World world, String generatorOptions)

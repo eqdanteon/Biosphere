@@ -14,7 +14,7 @@ public class ModConfig {
 
     // World
     public static boolean worldFloor = true;
-    public static boolean worldFloorBuffer = false;
+    public static boolean worldFloorBuffer = true;
     public static String bufferLiquid = Blocks.WATER.getRegistryName().toString();
     public static IBlockState bufferBlock;
     public static int bufferThickness = 1;

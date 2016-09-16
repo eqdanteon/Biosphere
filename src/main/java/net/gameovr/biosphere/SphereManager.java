@@ -2,6 +2,7 @@ package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.config.ModConfig;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,6 +13,7 @@ import java.util.Random;
 public class SphereManager {
 
     Random rand;
+    Sphere nearestOrigin = null;
 
 
     public Sphere getNearestSphere(BlockPos pos) {
@@ -35,27 +37,26 @@ public class SphereManager {
 
         rand = new Random(seed);
         // bounds of world
-        int left = -10;
-        int right = 10;
-        int top = -10;
-        int bottom = 10;
+        int left = -16;
+        int right = 16;
+        int top = -16;
+        int bottom = 16;
 
         for (int x = left; x < right+1; x++){
-            rand.nextInt();
             for (int z = top; z < bottom+1; z++){
-                rand.nextInt();
-                genSphereByChunk(x, z);
+               genSphereByChunk(x, z);
             }
 
         }
 
+        BiosphereWorldType.spawnPoint = nearestOrigin.origin;
         writeSphereListToDisk();
 
         Biosphere.logger.info("Sphere list created: " + BiosphereWorldType.spheres.size() + " spheres added.");
 
     }
 
-    private void genSphereByChunk(int chunkX, int chunkZ){
+    private Sphere genSphereByChunk(int chunkX, int chunkZ){
 
         int radius = rand.nextInt((ModConfig.maxSphereRadius-16)+1)+16;
         int yPosMin = 2 + radius;
@@ -63,23 +64,44 @@ public class SphereManager {
 
         int blockX = (chunkX * 16) + rand.nextInt(16);
         int blockZ = (chunkZ * 16) + rand.nextInt(16);
-        rand.nextInt();
         int blockY = yPosMin + (int)(rand.nextFloat() * (yPosMax - yPosMin));
 
         BlockPos randomPos = new BlockPos(blockX, blockY, blockZ);
         Sphere nearestSphere;
+        BlockPos worldOrigin = new BlockPos(0, 128, 0);
+
+
+        Sphere genSphere = new Sphere(randomPos, radius);
 
         if (!BiosphereWorldType.spheres.isEmpty()) {
             nearestSphere = getNearestSphere(randomPos);
             if (nearestSphere.getDistanceFromOrigin(randomPos) > ModConfig.minDistanceApart + radius) {
-                BiosphereWorldType.spheres.add(new Sphere(randomPos, radius));
+                genSphere = new Sphere(randomPos, radius);
+                BiosphereWorldType.spheres.add(genSphere);
+
+                if (nearestOrigin != null){
+
+                    if(genSphere.getDistanceFromOrigin(worldOrigin) < nearestOrigin.getDistanceFromOrigin(worldOrigin)){
+                        nearestOrigin = genSphere;
+                    }
+
+                }else{
+                    nearestOrigin = genSphere;
+                }
+
+
+
             }
         } else {
-            Sphere sphere = new Sphere(randomPos, radius);
-            BiosphereWorldType.spheres.add(sphere);
+            BiosphereWorldType.spheres.add(genSphere);
+
         }
 
+
+        return genSphere;
+
     }
+
 
     private void writeSphereListToDisk(){
 

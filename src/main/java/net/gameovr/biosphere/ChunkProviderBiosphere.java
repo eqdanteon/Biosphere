@@ -1,16 +1,30 @@
 package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.config.ModConfig;
+import net.minecraft.block.BlockFalling;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
+import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldEntitySpawner;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkGenerator;
+import net.minecraft.world.gen.MapGenBase;
+import net.minecraft.world.gen.MapGenCaves;
+import net.minecraft.world.gen.NoiseGeneratorOctaves;
 import net.minecraft.world.gen.NoiseGeneratorPerlin;
+import net.minecraft.world.gen.feature.WorldGenLakes;
+import net.minecraft.world.gen.structure.MapGenScatteredFeature;
+import net.minecraftforge.event.terraingen.TerrainGen;
+import static net.minecraftforge.event.terraingen.InitMapGenEvent.EventType.CAVE;
+import static net.minecraftforge.event.terraingen.InitMapGenEvent.EventType.SCATTERED_FEATURE;
+import static net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate.EventType.ANIMALS;
+import static net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate.EventType.LAKE;
+
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -24,8 +38,15 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     private IBlockState bufferBlockState;
     private SphereManager spheremanager = new SphereManager();
 
+    private MapGenBase caveGenerator;
+    private MapGenScatteredFeature scatteredFeatureGenerator;
+
     private NoiseGeneratorPerlin stoneNoiseGen;
     private double[] stoneNoiseArray;
+    private final double[] noiseArray;
+    private NoiseGeneratorOctaves xyzNoiseGenA;
+    private NoiseGeneratorOctaves xyzNoiseGenB;
+    private NoiseGeneratorOctaves xyzBalanceNoiseGen;
 
     public ChunkProviderBiosphere(World world, long seed) {
         this.world = world;
@@ -38,8 +59,17 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         SphereManager sphereManager = new SphereManager();
         sphereManager.GenerateSpheres(seed);
 
+        //setup terrain generators
+        this.caveGenerator = TerrainGen.getModdedMapGen(new MapGenCaves(), CAVE);
+        this.scatteredFeatureGenerator = (MapGenScatteredFeature)TerrainGen.getModdedMapGen(new MapGenScatteredFeature(), SCATTERED_FEATURE);
+
+        // set up the noise generators
+        this.xyzNoiseGenA = new NoiseGeneratorOctaves(this.rand, 16);
+        this.xyzNoiseGenB = new NoiseGeneratorOctaves(this.rand, 16);
+        this.xyzBalanceNoiseGen = new NoiseGeneratorOctaves(this.rand, 8);
         this.stoneNoiseGen = new NoiseGeneratorPerlin(this.rand, 4);
         this.stoneNoiseArray = new double[256];
+        this.noiseArray = new double[825];
 
     }
 
@@ -58,7 +88,10 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         Biome[] biomes = this.world.getBiomeProvider().getBiomesForGeneration(null, chunkX * 16, chunkZ * 16, 16, 16);
         this.replaceBlocksForBiome(chunkX, chunkZ, chunkprimer, biomes);
 
+        this.caveGenerator.generate(this.world, chunkX, chunkZ, chunkprimer);
+        //this.scatteredFeatureGenerator.generate(this.world, chunkX, chunkZ, chunkprimer);
 
+        //Create and return chunk
         Chunk chunk = new Chunk(world, chunkprimer, chunkX, chunkZ);
 
         byte[] chunkBiomes = chunk.getBiomeArray();
@@ -74,6 +107,35 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     public void populate(int chunkX, int chunkZ) {
 
+        BlockFalling.fallInstantly = true;
+        int x = chunkX * 16;
+        int z = chunkZ * 16;
+
+        BlockPos blockpos = new BlockPos(x, 0, z);
+
+        Biome Biome = this.world.getBiomeForCoordsBody(blockpos.add(16, 0, 16));
+        BlockPos decorateStart = blockpos.add(8, 0, 8);
+        BlockPos target;
+
+
+        // add water lakes
+        if (Biome.getRainfall() > 0.01F && Biome != Biomes.DESERT && Biome != Biomes.DESERT_HILLS && TerrainGen.populate(this, world, rand, chunkX, chunkZ, false, LAKE))
+        {
+            target = decorateStart.add(this.rand.nextInt(16), this.rand.nextInt(256), this.rand.nextInt(16));
+            (new WorldGenLakes(Blocks.WATER)).generate(this.world, this.rand, target);
+        }
+
+        // add animals
+        if (TerrainGen.populate(this, world, rand, chunkX, chunkZ, false, ANIMALS))
+        {
+            WorldEntitySpawner.performWorldGenSpawning(this.world, Biome, x + 8, z + 8, 16, 16, this.rand);
+        }
+
+
+        // hand over to the biome to decorate itself
+        Biome.decorate(this.world, this.rand, new BlockPos(x, 0, z));
+
+        BlockFalling.fallInstantly = false;
 
     }
 
@@ -129,23 +191,21 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                         int currentBlockY = (iy * 16) + jy;
                         int currentBlockZ = (chunkZ * 16) + jz;
 
-                        //TODO: figure out Exception in server tick loop sometimes
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) == nearestSphere.getRadius()) {
 
                             chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.GLASS.getDefaultState());
-
                         }
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
-                            chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.GRASS.getDefaultState());
-                        }
-                        if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 3) {
+
                             chunkPrimer.setBlockState(jx, currentBlockY, jz, Blocks.STONE.getDefaultState());
                         }
+
                     }
                 }
             }
         }
     }
+
 
 
     public void replaceBlocksForBiome(int chunkX, int chunkZ, ChunkPrimer primer, Biome[] biomes)

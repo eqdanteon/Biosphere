@@ -2,10 +2,15 @@ package net.gameovr.biosphere;
 
 import net.minecraft.util.math.BlockPos;
 
+import java.util.ArrayList;
+
 public class Sphere {
 
+    public static final int MAX_BRIDGE_CONNECTIONS = 3;
     public BlockPos origin;
     public int radius;
+    public static final ArrayList<BlockPos> bridgeConnections = new ArrayList<BlockPos>(MAX_BRIDGE_CONNECTIONS);
+
 
 
     public Sphere(BlockPos origin, int radius) {
@@ -31,19 +36,12 @@ public class Sphere {
         return origin;
     }
 
-    public void setOrigin(BlockPos origin) {
-        this.origin = origin;
-    }
-
     public int getRadius() {
         return radius;
     }
 
-    public void setRadius(int radius) {
-        this.radius = radius;
+    @Override
+    public String toString() {
+        return "Origin: " + this.origin.getX() + ", " + this.origin.getY() + ", " + this.origin.getZ();
     }
-
-
-
-
 }

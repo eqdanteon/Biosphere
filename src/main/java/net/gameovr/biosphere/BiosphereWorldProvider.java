@@ -32,8 +32,6 @@ public class BiosphereWorldProvider extends WorldProviderSurface {
 
     public BlockPos setBiosphereSpawnPoint(){
 
-        BiosphereWorldType worldType = (BiosphereWorldType) this.worldObj.getWorldType();
-
         GameRules rules = this.worldObj.getGameRules();
         if(rules.hasRule("spawnRadius")){
             System.out.println("Found Game Rule: spawnRadius");
@@ -43,12 +41,7 @@ public class BiosphereWorldProvider extends WorldProviderSurface {
             System.out.println("Could NOT find Game Rule: spawnRadius");
         }
 
-        //int getSphereIndex = new Random(event.getWorld().getSeed()).nextInt(worldType.spheres.size());
-        BlockPos sphereOrigin = worldType.spheres.get(0).origin;
-
-        BlockPos spawnPoint = new BlockPos(sphereOrigin.getX(), sphereOrigin.getY()-2, sphereOrigin.getZ());
-
-        return spawnPoint;
+        return BiosphereWorldType.spawnPoint;
     }
 
 }
