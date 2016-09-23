@@ -30,6 +30,11 @@ public class BiosphereWorldProvider extends WorldProviderSurface {
         return false;
     }
 
+    @Override
+    public boolean canRespawnHere() {
+        return false;
+    }
+
     public BlockPos setBiosphereSpawnPoint(){
 
         GameRules rules = this.worldObj.getGameRules();

@@ -13,10 +13,13 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.oredict.OreDictionary;
 
 public class CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
+
+
         ModConfig.config = new Configuration(event.getSuggestedConfigurationFile());
         ModConfig.config.load();
         ModConfig.processConfig(ModConfig.config);
@@ -25,11 +28,11 @@ public class CommonProxy {
 
     }
     public void init(FMLInitializationEvent event) {
+
+
+
         Biosphere.biosphereWorldType = new BiosphereWorldType("biosphere");
 
-        DimensionManager.unregisterDimension(0);
-        DimensionType bioOverworld = DimensionType.register("Overworld", "", 0, BiosphereWorldProvider.class, false );
-        DimensionManager.registerDimension(0, bioOverworld);
         ModHelper.registerEventListeners();
 
 

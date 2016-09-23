@@ -1,21 +1,45 @@
 package net.gameovr.biosphere;
 
+import net.gameovr.biosphere.helpers.ChunkCoordinate;
+import net.minecraft.init.Biomes;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.chunk.Chunk;
 
 import java.util.ArrayList;
 
 public class Sphere {
 
-    public static final int MAX_BRIDGE_CONNECTIONS = 3;
     public BlockPos origin;
     public int radius;
-    public static final ArrayList<BlockPos> bridgeConnections = new ArrayList<BlockPos>(MAX_BRIDGE_CONNECTIONS);
+    public Biome biome = Biomes.DEFAULT;
+    public ChunkCoordinate originChunk;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        Sphere sphere = (Sphere) o;
 
-    public Sphere(BlockPos origin, int radius) {
+        if (getRadius() != sphere.getRadius()) return false;
+        if (!getOrigin().equals(sphere.getOrigin())) return false;
+        return originChunk.equals(sphere.originChunk);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getOrigin().hashCode();
+        result = 31 * result + getRadius();
+        result = 31 * result + originChunk.hashCode();
+        return result;
+    }
+
+    public Sphere(BlockPos origin, int radius, ChunkCoordinate chunk) {
         this.origin = origin;
         this.radius = radius;
+        this.originChunk = chunk;
     }
 
     public int getDistanceFromOrigin(BlockPos blockpos) {
@@ -39,6 +63,8 @@ public class Sphere {
     public int getRadius() {
         return radius;
     }
+
+    public int getSphereGroundLevel(){return origin.getY() - 2;}
 
     @Override
     public String toString() {

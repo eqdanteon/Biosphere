@@ -1,13 +1,16 @@
 package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.config.ModConfig;
+import net.gameovr.biosphere.helpers.BioLogger;
+import net.gameovr.biosphere.helpers.ChunkCalculator;
+import net.gameovr.biosphere.helpers.ChunkCoordinate;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class SphereManager {
@@ -16,7 +19,7 @@ public class SphereManager {
     Sphere nearestOrigin = null;
 
 
-    public Sphere getNearestSphere(BlockPos pos) {
+    public static Sphere getNearestSphere(BlockPos pos) {
 
         Sphere closestSphere = null;
         int minDistance = Integer.MAX_VALUE;
@@ -37,10 +40,10 @@ public class SphereManager {
 
         rand = new Random(seed);
         // bounds of world
-        int left = -16;
-        int right = 16;
-        int top = -16;
-        int bottom = 16;
+        int left = -12;
+        int right = 12;
+        int top = -12;
+        int bottom = 12;
 
         for (int x = left; x < right+1; x++){
             for (int z = top; z < bottom+1; z++){
@@ -50,7 +53,7 @@ public class SphereManager {
         }
 
         BiosphereWorldType.spawnPoint = nearestOrigin.origin;
-        writeSphereListToDisk();
+        BioLogger.writeSphereListToDisk();
 
         Biosphere.logger.info("Sphere list created: " + BiosphereWorldType.spheres.size() + " spheres added.");
 
@@ -70,13 +73,13 @@ public class SphereManager {
         Sphere nearestSphere;
         BlockPos worldOrigin = new BlockPos(0, 128, 0);
 
-
-        Sphere genSphere = new Sphere(randomPos, radius);
+        int subChunkY = ChunkCalculator.getSubChunkYfromBlockY(randomPos.getY());
+        Sphere genSphere = new Sphere(randomPos, radius, new ChunkCoordinate(chunkX, subChunkY, chunkZ));
 
         if (!BiosphereWorldType.spheres.isEmpty()) {
             nearestSphere = getNearestSphere(randomPos);
             if (nearestSphere.getDistanceFromOrigin(randomPos) > ModConfig.minDistanceApart + radius) {
-                genSphere = new Sphere(randomPos, radius);
+
                 BiosphereWorldType.spheres.add(genSphere);
 
                 if (nearestOrigin != null){
@@ -86,6 +89,7 @@ public class SphereManager {
                     }
 
                 }else{
+
                     nearestOrigin = genSphere;
                 }
 
@@ -93,6 +97,7 @@ public class SphereManager {
 
             }
         } else {
+            //genSphere.originChunk = new ChunkCoordinate(chunkX, subChunkY, chunkZ);
             BiosphereWorldType.spheres.add(genSphere);
 
         }
@@ -100,30 +105,6 @@ public class SphereManager {
 
         return genSphere;
 
-    }
-
-
-    private void writeSphereListToDisk(){
-
-        try {
-            File file = new File("sphereList.txt");
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-
-            FileWriter fw = new FileWriter(file.getAbsoluteFile());
-            BufferedWriter bw = new BufferedWriter(fw);
-
-            for(Sphere s : BiosphereWorldType.spheres){
-                bw.write("Sphere: " + s.getOrigin().getX() + "," + s.getOrigin().getY() + "," + s.getOrigin().getZ());
-                bw.newLine();
-            }
-            bw.close();
-
-        }
-        catch (IOException e){
-            e.printStackTrace();
-        }
     }
 
 

@@ -17,6 +17,7 @@ public class ModHelper {
     public static void registerEventListeners(){
 
         MinecraftForge.EVENT_BUS.register(new BiosphereEventHandler());
+        MinecraftForge.TERRAIN_GEN_BUS.register(new BiosphereEventHandler());
     }
 
 }
