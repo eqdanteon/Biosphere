@@ -1,16 +1,11 @@
 package net.gameovr.biosphere.helpers;
 
-import net.gameovr.biosphere.Biosphere;
 import net.gameovr.biosphere.BiosphereWorldType;
 import net.gameovr.biosphere.Sphere;
 import net.gameovr.biosphere.SphereManager;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.chunk.Chunk;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class ChunkCalculator {
 

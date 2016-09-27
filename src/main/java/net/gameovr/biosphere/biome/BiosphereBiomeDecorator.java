@@ -1,20 +1,15 @@
 package net.gameovr.biosphere.biome;
 
-import net.gameovr.biosphere.BiosphereWorldType;
 import net.gameovr.biosphere.Sphere;
-import net.gameovr.biosphere.SphereManager;
 import net.gameovr.biosphere.config.ModConfig;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockStone;
 import net.minecraft.block.material.Material;
-import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeDecorator;
-import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.gen.ChunkProviderSettings;
 import net.minecraft.world.gen.feature.*;
 

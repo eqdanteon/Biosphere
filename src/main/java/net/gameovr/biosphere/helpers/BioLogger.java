@@ -7,7 +7,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 
 public class BioLogger {
 
@@ -23,7 +22,7 @@ public class BioLogger {
             BufferedWriter bw = new BufferedWriter(fw);
 
             for(Sphere s : BiosphereWorldType.spheres){
-                bw.write("Sphere: " + s.getOrigin().getX() + "," + s.getOrigin().getY() + "," + s.getOrigin().getZ());
+                bw.write(s.toString());
                 bw.newLine();
             }
             bw.close();

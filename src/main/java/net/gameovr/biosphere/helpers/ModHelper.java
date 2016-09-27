@@ -2,7 +2,6 @@ package net.gameovr.biosphere.helpers;
 
 import net.gameovr.biosphere.BiosphereEventHandler;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class ModHelper {
 

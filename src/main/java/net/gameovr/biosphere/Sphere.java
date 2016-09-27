@@ -4,9 +4,6 @@ import net.gameovr.biosphere.helpers.ChunkCoordinate;
 import net.minecraft.init.Biomes;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
-import net.minecraft.world.chunk.Chunk;
-
-import java.util.ArrayList;
 
 public class Sphere {
 
@@ -14,6 +11,9 @@ public class Sphere {
     public int radius;
     public Biome biome = Biomes.DEFAULT;
     public ChunkCoordinate originChunk;
+    private boolean hasLake = false;
+    public BlockPos startBridgeConnection;
+    public BlockPos endBridgeConnection;
 
     @Override
     public boolean equals(Object o) {
@@ -66,8 +66,18 @@ public class Sphere {
 
     public int getSphereGroundLevel(){return origin.getY() - 2;}
 
+    public void setHasLake(){
+        hasLake = true;
+    }
+    public boolean getHasLake(){
+        return hasLake;
+    }
+
     @Override
     public String toString() {
-        return "Origin: " + this.origin.getX() + ", " + this.origin.getY() + ", " + this.origin.getZ();
+        String origin = "Origin: " + this.origin.getX() + ", " + this.origin.getY() + ", " + this.origin.getZ();
+
+        //String bridge = "  Bridge:" + this.startBridgeConnection.toString();
+        return origin;
     }
 }

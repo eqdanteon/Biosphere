@@ -2,7 +2,6 @@ package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.biome.BiosphereBiomeProvider;
 import net.gameovr.biosphere.config.ModConfig;
-import net.minecraft.block.BlockGravel;
 import net.minecraft.block.BlockSand;
 import net.minecraft.block.BlockSand.EnumType;
 import net.minecraft.block.material.Material;
@@ -21,9 +20,6 @@ import net.minecraftforge.common.DimensionManager;
 
 import java.util.ArrayList;
 import java.util.Random;
-
-import static net.minecraft.block.BlockStoneSlabNew.EnumType.RED_SANDSTONE;
-import static net.minecraft.init.Blocks.SANDSTONE;
 
 public class BiosphereWorldType extends WorldType {
 

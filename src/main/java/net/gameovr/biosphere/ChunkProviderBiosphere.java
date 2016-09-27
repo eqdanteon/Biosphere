@@ -2,19 +2,17 @@ package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.biome.BiosphereBiomeDecorator;
 import net.gameovr.biosphere.config.ModConfig;
-import net.gameovr.biosphere.helpers.BioLogger;
 import net.gameovr.biosphere.helpers.ChunkCalculator;
-import net.gameovr.biosphere.helpers.SphereChunk;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldEntitySpawner;
-import net.minecraft.world.WorldProviderSurface;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkPrimer;
@@ -25,20 +23,17 @@ import net.minecraft.world.gen.NoiseGeneratorOctaves;
 import net.minecraft.world.gen.NoiseGeneratorPerlin;
 import net.minecraft.world.gen.feature.WorldGenLakes;
 import net.minecraft.world.gen.structure.MapGenScatteredFeature;
-import net.minecraft.world.gen.structure.MapGenVillage;
 import net.minecraftforge.event.terraingen.TerrainGen;
-import scala.tools.nsc.doc.base.comment.Block;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Random;
 
 import static net.minecraftforge.event.terraingen.InitMapGenEvent.EventType.CAVE;
 import static net.minecraftforge.event.terraingen.InitMapGenEvent.EventType.SCATTERED_FEATURE;
 import static net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate.EventType.ANIMALS;
 import static net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate.EventType.LAKE;
-
-
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import static net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate.EventType.LAVA;
 
 public class ChunkProviderBiosphere implements IChunkGenerator {
 
@@ -58,6 +53,10 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     private NoiseGeneratorOctaves xyzNoiseGenA;
     private NoiseGeneratorOctaves xyzNoiseGenB;
     private NoiseGeneratorOctaves xyzBalanceNoiseGen;
+
+    // settings
+    private int lavaLakeChance = 100;
+    private boolean useLavaLakes = true;
 
     public ChunkProviderBiosphere(World world, long seed) {
         this.world = world;
@@ -100,6 +99,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
         this.replaceBlocksForBiome(chunkX, chunkZ, chunkprimer, biomes);
         this.caveGenerator.generate(this.world, chunkX, chunkZ, chunkprimer);
 
+
         //Create and return chunk
         Chunk chunk = new Chunk(world, chunkprimer, chunkX, chunkZ);
 
@@ -109,6 +109,8 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
         }
         chunk.setBiomeArray(chunkBiomes);
+
+
 
         chunk.generateSkylightMap();
         return chunk;
@@ -123,9 +125,11 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     public boolean generateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
 
+        //buildBridges(chunkX, chunkZ);
 
         return false;
     }
+
 
     public List<Biome.SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos) {
         return null;
@@ -168,6 +172,8 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
             BlockPos referenceBlock = ChunkCalculator.getSubChunkCenterPos(chunkX, subChunkY, chunkZ);
             nearestSphere = spheremanager.getNearestSphere(referenceBlock);
+            BlockPos bridgeConnectionPoint = nearestSphere.startBridgeConnection;
+
 
             // subchunk is 16 blocks high in y direction, index as jy
             for (int blockY = 0; blockY < 16; ++blockY) {
@@ -181,6 +187,7 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                         int currentBlockX = (chunkX * 16) + subChunkX;
                         int currentBlockY = (subChunkY * 16) + blockY;
                         int currentBlockZ = (chunkZ * 16) + subChunkZ;
+                        BlockPos currentBlockPos = new BlockPos(currentBlockX, currentBlockY, currentBlockZ);
 
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) == nearestSphere.getRadius()) {
 
@@ -189,6 +196,23 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
 
                             chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.STONE.getDefaultState());
+                        }
+
+                        // build bridge
+                        if(currentBlockPos.equals(bridgeConnectionPoint)){
+                            //BioLogger.writeStringToDisk("bridge connections.txt", currentBlockPos.toString());
+                            chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.EMERALD_BLOCK.getDefaultState());
+
+                        }
+
+                        if(nearestSphere.startBridgeConnection != null && nearestSphere.endBridgeConnection != null) {
+                            int distanceAB = (int) nearestSphere.startBridgeConnection.getDistance(nearestSphere.endBridgeConnection.getX(), nearestSphere.endBridgeConnection.getY(), nearestSphere.endBridgeConnection.getZ());
+                            int distanceAC = (int) nearestSphere.startBridgeConnection.getDistance(currentBlockX, currentBlockY, currentBlockZ);
+                            int distanceBC = (int) nearestSphere.endBridgeConnection.getDistance(currentBlockX, currentBlockY, currentBlockZ);
+                            //Draw bridge
+                            if (distanceAC + distanceBC == distanceAB) {
+                                chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.EMERALD_BLOCK.getDefaultState());
+                            }
                         }
 
                     }
@@ -220,15 +244,37 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                 Biome Biome = this.world.getBiomeForCoordsBody(blockpos.add(8, 0, 8));
                 BlockPos decorateStart = blockpos.add(8, 0, 8);
 
+                boolean hasVillageGenerated = false;
 
                 BlockPos target;
 
                 // add water lakes
-                if (Biome.getRainfall() > 0.01F && Biome != Biomes.DESERT && Biome != Biomes.DESERT_HILLS && TerrainGen.populate(this, world, rand, chunkX, chunkZ, false, LAKE)) {
+                if (!nearestSphere.getHasLake()) {
+                    if (Biome.getRainfall() > 0.01F && Biome != Biomes.DESERT && Biome != Biomes.DESERT_HILLS && TerrainGen.populate(this, world, rand, chunkX, chunkZ, false, LAKE)) {
 
-                    target = decorateStart.add(this.rand.nextInt(16), this.rand.nextInt(16), this.rand.nextInt(16));
-                    (new WorldGenLakes(Blocks.WATER)).generate(this.world, this.rand, target);
+                        target = decorateStart.add(this.rand.nextInt(16), this.rand.nextInt(16), this.rand.nextInt(16));
+                        if ((new WorldGenLakes(Blocks.WATER)).generate(this.world, this.rand, target)) {
+                            nearestSphere.setHasLake();
+                        }
+
+                    }
+
+                    // add lava lakes
+                    if (TerrainGen.populate(this, world, rand, chunkX, chunkZ, hasVillageGenerated, LAVA) && !hasVillageGenerated && this.rand.nextInt(this.lavaLakeChance / 10) == 0 && this.useLavaLakes)
+                    {
+                        target = decorateStart.add(this.rand.nextInt(16), this.rand.nextInt(16), this.rand.nextInt(16));
+                        if (this.rand.nextInt(this.lavaLakeChance / 8) == 0)
+                        {
+                            if ((new WorldGenLakes(Blocks.LAVA)).generate(this.world, this.rand, target)){
+                                nearestSphere.setHasLake();
+                            }
+
+                        }
+                    }
+
                 }
+
+
 
                 // hand over to the biome to decorate itself
                 //Biome.decorate(this.world, this.rand, new BlockPos(x, nearestSphere.getOrigin().getY(), z));
