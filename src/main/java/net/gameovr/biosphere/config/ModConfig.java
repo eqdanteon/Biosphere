@@ -20,8 +20,8 @@ public class ModConfig {
     public static int bufferThickness = 1;
 
     // Sphere Generation
-    public static int maxSphereRadius = 64;
-    public static int minDistanceApart = 128;
+    public static int maxSphereRadius = 32;
+    public static int minDistanceApart = 64;
 
     public static void processConfig(Configuration config) {
 

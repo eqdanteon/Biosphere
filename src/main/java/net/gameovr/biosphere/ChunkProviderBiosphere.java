@@ -2,15 +2,15 @@ package net.gameovr.biosphere;
 
 import net.gameovr.biosphere.biome.BiosphereBiomeDecorator;
 import net.gameovr.biosphere.config.ModConfig;
+import net.gameovr.biosphere.helpers.BioLogger;
 import net.gameovr.biosphere.helpers.ChunkCalculator;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldEntitySpawner;
 import net.minecraft.world.biome.Biome;
@@ -26,6 +26,9 @@ import net.minecraft.world.gen.structure.MapGenScatteredFeature;
 import net.minecraftforge.event.terraingen.TerrainGen;
 
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -125,9 +128,9 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     public boolean generateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
 
-        //buildBridges(chunkX, chunkZ);
+       // Biosphere.logger.info("!!!!! Generate Structures was called !!!!!");
 
-        return false;
+        return true;
     }
 
 
@@ -141,6 +144,50 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     }
 
     public void recreateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
+        //Biosphere.logger.info("!!!!! Recreate Structures was called !!!!!");
+
+        // divide chunk into 16 subchunks in y direction
+        for (int subChunkY = 0; subChunkY < 16; ++subChunkY) {
+
+            BlockPos referenceBlock = ChunkCalculator.getSubChunkCenterPos(chunkX, subChunkY, chunkZ);
+            nearestSphere = spheremanager.getNearestSphere(referenceBlock);
+
+
+
+            // subchunk is 16 blocks high in y direction, index as jy
+            for (int blockY = 0; blockY < 16; ++blockY) {
+
+                // subchunk is 16 blocks long in x direction, index as jx
+                for (int subChunkX = 0; subChunkX < 16; ++subChunkX) {
+
+                    // subchunk is 16 blocks long in z direction, index as jz
+                    for (int subChunkZ = 0; subChunkZ < 16; ++subChunkZ) {
+
+                        int currentBlockX = (chunkX * 16) + subChunkX;
+                        int currentBlockY = (subChunkY * 16) + blockY;
+                        int currentBlockZ = (chunkZ * 16) + subChunkZ;
+                        BlockPos currentBlockPos = new BlockPos(currentBlockX, currentBlockY, currentBlockZ);
+
+                        // build bridge
+                        if(nearestSphere.startBridgeConnection != null && nearestSphere.endBridgeConnection != null) {
+
+                            if (currentBlockPos.equals(nearestSphere.startBridgeConnection) || currentBlockPos.equals(nearestSphere.endBridgeConnection)) {
+
+                                chunkIn.setBlockState(currentBlockPos, Blocks.EMERALD_BLOCK.getDefaultState());
+                            }
+
+                            if(nearestSphere.bridgeBlocks.contains(currentBlockPos)){
+                                chunkIn.setBlockState(currentBlockPos, Blocks.EMERALD_BLOCK.getDefaultState());
+                            }
+
+
+
+                        }
+                    }
+                }
+            }
+        }
+
 
     }
 
@@ -167,13 +214,18 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
     private void drawSphereFromSuperLoop(int chunkX, int chunkZ, ChunkPrimer chunkPrimer) {
 
+
+
         // divide chunk into 16 subchunks in y direction, index as iy
         for (int subChunkY = 0; subChunkY < 16; ++subChunkY) {
 
             BlockPos referenceBlock = ChunkCalculator.getSubChunkCenterPos(chunkX, subChunkY, chunkZ);
             nearestSphere = spheremanager.getNearestSphere(referenceBlock);
-            BlockPos bridgeConnectionPoint = nearestSphere.startBridgeConnection;
 
+            Vec3i lineSE = nearestSphere.startBridgeConnection.subtract(nearestSphere.endBridgeConnection);
+            Vec3d line3dSE = new Vec3d(lineSE);
+            Vec3i lineES = nearestSphere.endBridgeConnection.subtract(nearestSphere.startBridgeConnection);
+            Vec3d line3dES = new Vec3d(lineES);
 
             // subchunk is 16 blocks high in y direction, index as jy
             for (int blockY = 0; blockY < 16; ++blockY) {
@@ -196,23 +248,6 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                         if (nearestSphere.getDistanceFromOrigin(currentBlockX, currentBlockY, currentBlockZ) < nearestSphere.getRadius() && currentBlockY < nearestSphere.getOrigin().getY() - 2) {
 
                             chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.STONE.getDefaultState());
-                        }
-
-                        // build bridge
-                        if(currentBlockPos.equals(bridgeConnectionPoint)){
-                            //BioLogger.writeStringToDisk("bridge connections.txt", currentBlockPos.toString());
-                            chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.EMERALD_BLOCK.getDefaultState());
-
-                        }
-
-                        if(nearestSphere.startBridgeConnection != null && nearestSphere.endBridgeConnection != null) {
-                            int distanceAB = (int) nearestSphere.startBridgeConnection.getDistance(nearestSphere.endBridgeConnection.getX(), nearestSphere.endBridgeConnection.getY(), nearestSphere.endBridgeConnection.getZ());
-                            int distanceAC = (int) nearestSphere.startBridgeConnection.getDistance(currentBlockX, currentBlockY, currentBlockZ);
-                            int distanceBC = (int) nearestSphere.endBridgeConnection.getDistance(currentBlockX, currentBlockY, currentBlockZ);
-                            //Draw bridge
-                            if (distanceAC + distanceBC == distanceAB) {
-                                chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.EMERALD_BLOCK.getDefaultState());
-                            }
                         }
 
                     }

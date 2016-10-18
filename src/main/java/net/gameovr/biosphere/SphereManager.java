@@ -5,9 +5,13 @@ import net.gameovr.biosphere.helpers.BioLogger;
 import net.gameovr.biosphere.helpers.ChunkCalculator;
 import net.gameovr.biosphere.helpers.ChunkCoordinate;
 
+import net.minecraft.init.Blocks;
+import net.minecraft.pathfinding.PathPoint;
 import net.minecraft.util.math.*;
+import scala.tools.nsc.doc.base.comment.Block;
 
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class SphereManager {
@@ -32,8 +36,10 @@ public class SphereManager {
         int minDistance = Integer.MAX_VALUE;
 
         for (Sphere sphere : BiosphereWorldType.spheres) {
-            if (sphere.getDistanceFromOrigin(pos) < minDistance) {
-                minDistance = sphere.getDistanceFromOrigin(pos);
+            int distance = (int)sphere.getDistanceFromOrigin(pos);
+
+            if (distance < minDistance && distance > 0) {
+                minDistance = distance;
                 closestSphere = sphere;
 
             }
@@ -59,6 +65,8 @@ public class SphereManager {
 
         }
 
+        connectSpheres();
+
         BiosphereWorldType.spawnPoint = nearestOrigin.origin;
         BioLogger.writeSphereListToDisk();
 
@@ -74,7 +82,8 @@ public class SphereManager {
 
         int blockX = (chunkX * 16) + rand.nextInt(16);
         int blockZ = (chunkZ * 16) + rand.nextInt(16);
-        int blockY = yPosMin + (int)(rand.nextFloat() * (yPosMax - yPosMin));
+        //int blockY = yPosMin + (int)(rand.nextFloat() * (yPosMax - yPosMin));
+        int blockY = 64;
 
         BlockPos randomPos = new BlockPos(blockX, blockY, blockZ);
         Sphere nearestSphere;
@@ -86,30 +95,6 @@ public class SphereManager {
         if (!BiosphereWorldType.spheres.isEmpty()) {
             nearestSphere = getNearestSphere(randomPos);
             if (nearestSphere.getDistanceFromOrigin(randomPos) > ModConfig.minDistanceApart + radius) {
-
-                //set Bridge Connection Point
-                Vec3i line = genSphere.getOrigin().subtract(nearestSphere.getOrigin());
-                Vec3d line3d = new Vec3d(line);
-
-                Vec3d normalized =  line3d.normalize();
-
-                BlockPos currentSpherePoint = new BlockPos(genSphere.getOrigin().getX() - normalized.xCoord*genSphere.getRadius(), genSphere.getSphereGroundLevel(), genSphere.getOrigin().getZ() - normalized.zCoord*genSphere.getRadius());
-                BlockPos nearestSpherePoint = new BlockPos(nearestSphere.getOrigin().getX() + normalized.xCoord*nearestSphere.getRadius(), nearestSphere.getSphereGroundLevel(), nearestSphere.getOrigin().getZ() + normalized.zCoord*nearestSphere.getRadius());
-
-                // are the points within a 45 degree angle?
-                float angle = (float) Math.toDegrees(Math.atan2(nearestSpherePoint.getY() - currentSpherePoint.getY(), nearestSpherePoint.getX() - currentSpherePoint.getX()));
-                if(angle < 0){
-                    angle += 360;
-                }
-                if((angle <= 135 && angle >= 45) || (angle <= 315 && angle >= 225 )) {
-
-                    genSphere.startBridgeConnection = currentSpherePoint;
-                    genSphere.endBridgeConnection = nearestSpherePoint;
-
-                    nearestSphere.startBridgeConnection = nearestSpherePoint;
-                    nearestSphere.endBridgeConnection = currentSpherePoint;
-
-                }
 
                     // Add Sphere to World List
                     BiosphereWorldType.spheres.add(genSphere);
@@ -137,6 +122,111 @@ public class SphereManager {
         return genSphere;
 
     }
+
+    private void connectSpheres(){
+
+        for(int i = 0; i < BiosphereWorldType.spheres.size(); i++){
+
+            // current sphere
+            Sphere cs = BiosphereWorldType.spheres.get(i);
+            if(cs.bridgeConnection == null){
+                // get closest sphere to current sphere
+                Sphere cs1 = getNearestSphere(cs.getOrigin());
+
+                //cs.bridgeConnection = getBridgeConnectionVector(cs, cs1);
+
+                // set ground level down one block
+                BlockPos startGroundLevel = new BlockPos(cs.getOrigin().getX(), cs.getOrigin().getY() - 3, cs.getOrigin().getZ());
+                BlockPos endGroundLevel = new BlockPos(cs1.getOrigin().getX(), cs1.getOrigin().getY() - 3, cs1.getOrigin().getZ());
+
+                // get vector between origins at ground level
+                Vec3i line = endGroundLevel.subtract(startGroundLevel);
+                Vec3d vector = new Vec3d(line);
+                Vec3d normal = vector.normalize();
+                // get distance from origin to sphere edge (radius)
+                double dx_start = normal.xCoord * cs.getRadius();
+                double dz_start = normal.zCoord * cs.getRadius();
+                double dx_end = normal.xCoord * cs1.getRadius();
+                double dz_end = normal.zCoord * cs1.getRadius();
+                // find the connection points
+                cs.startBridgeConnection = new BlockPos(startGroundLevel.getX() + dx_start, startGroundLevel.getY(), startGroundLevel.getZ() + dz_start);
+                cs.endBridgeConnection = new BlockPos(endGroundLevel.getX() - dx_end, endGroundLevel.getY(), endGroundLevel.getZ() - dz_end);
+                // create new vector representing the connection points with correct length
+                Vec3i connectLine = cs.endBridgeConnection.subtract(cs.startBridgeConnection);
+
+                // store this vector in sphere for future reference
+                cs.bridgeConnection = new Vec3d(connectLine);
+
+            }
+
+            // find all the blocks that make up the bridge
+            cs.bridgeBlocks = getBridgeBlocks(cs.startBridgeConnection, cs.endBridgeConnection, cs.bridgeConnection);
+
+        }
+
+    }
+
+    private Vec3d getBridgeConnectionVector(Sphere startOrigin, Sphere endOrigin){
+
+        // set ground level down one block
+        BlockPos startGroundLevel = startOrigin.getOriginAtGroundLevel();
+        startGroundLevel.add(0, -1, 0);
+
+        BlockPos endGroundLevel = endOrigin.getOriginAtGroundLevel();
+        endGroundLevel.add(0, -1, 0);
+        // get vector between origins at ground level
+        Vec3i line = endGroundLevel.subtract(startGroundLevel);
+        Vec3d vector = new Vec3d(line);
+        Vec3d normal = vector.normalize();
+        // get distance from origin to sphere edge (radius)
+        double dx_start = normal.xCoord * startOrigin.getRadius();
+        double dz_start = normal.zCoord * startOrigin.getRadius();
+        double dx_end = normal.xCoord * endOrigin.getRadius();
+        double dz_end = normal.zCoord * endOrigin.getRadius();
+        // find the connection points
+        BlockPos startConnectPoint = new BlockPos(startGroundLevel.getX() - dx_start, startGroundLevel.getY(), startGroundLevel.getZ() - dz_start);
+        BlockPos endConnectionPoint = new BlockPos(endGroundLevel.getX() + dx_end, endGroundLevel.getY(), endGroundLevel.getZ() + dz_end);
+        // create new vector representing the connection points with correct length
+        Vec3i connectLine = endConnectionPoint.subtract(startConnectPoint);
+
+        // store this vector in sphere for future reference
+        return new Vec3d(connectLine);
+
+
+
+
+    }
+
+    private ArrayList<BlockPos> getBridgeBlocks(BlockPos startPoint, BlockPos endPoint, Vec3d pathIn){
+
+        int bridgeWidth = 4;
+
+        Vec3d normal = pathIn.normalize();
+        //get all the points on the line which is the bridge
+        int dt = (int)pathIn.lengthVector();
+
+        ArrayList<BlockPos> blocks = new ArrayList<BlockPos>();
+        for (int i = 0; i < dt; i++){
+            BlockPos pos = startPoint.add(normal.xCoord * i, 0, normal.zCoord * i);
+
+            blocks.add(pos);
+            for(int b = 0; b < bridgeWidth; b++){
+                if(Math.abs(pos.getX()+b - startPoint.getX()) < bridgeWidth){
+                    blocks.add(pos.add(b,0,0));
+
+                }
+                if( Math.abs(pos.getZ()+b - startPoint.getZ()) < bridgeWidth){
+                    blocks.add(pos.add(0,0,b));
+                }
+            }
+
+
+
+        }
+
+        return blocks;
+    }
+
 
 
 

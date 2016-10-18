@@ -3,7 +3,12 @@ package net.gameovr.biosphere;
 import net.gameovr.biosphere.helpers.ChunkCoordinate;
 import net.minecraft.init.Biomes;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.biome.Biome;
+import scala.tools.nsc.doc.base.comment.Block;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 public class Sphere {
 
@@ -14,6 +19,8 @@ public class Sphere {
     private boolean hasLake = false;
     public BlockPos startBridgeConnection;
     public BlockPos endBridgeConnection;
+    public Vec3d bridgeConnection;
+    public ArrayList<BlockPos> bridgeBlocks;
 
     @Override
     public boolean equals(Object o) {
@@ -66,6 +73,8 @@ public class Sphere {
 
     public int getSphereGroundLevel(){return origin.getY() - 2;}
 
+    public BlockPos getOriginAtGroundLevel(){return origin.add(0, origin.getY() - getSphereGroundLevel(), 0);}
+
     public void setHasLake(){
         hasLake = true;
     }
@@ -75,9 +84,14 @@ public class Sphere {
 
     @Override
     public String toString() {
+        String rtn = null;
         String origin = "Origin: " + this.origin.getX() + ", " + this.origin.getY() + ", " + this.origin.getZ();
-
-        //String bridge = "  Bridge:" + this.startBridgeConnection.toString();
-        return origin;
+if(startBridgeConnection != null && endBridgeConnection != null) {
+    rtn = origin.concat("  Start Bridge:" + this.startBridgeConnection.toString() + " End Bridge: " + this.endBridgeConnection.toString());
+}
+else{
+    rtn = origin;
+}
+        return rtn;
     }
 }
