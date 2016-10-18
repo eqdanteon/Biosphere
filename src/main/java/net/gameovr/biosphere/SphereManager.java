@@ -83,7 +83,7 @@ public class SphereManager {
         int blockX = (chunkX * 16) + rand.nextInt(16);
         int blockZ = (chunkZ * 16) + rand.nextInt(16);
         //int blockY = yPosMin + (int)(rand.nextFloat() * (yPosMax - yPosMin));
-        int blockY = 64;
+        int blockY = 58;
 
         BlockPos randomPos = new BlockPos(blockX, blockY, blockZ);
         Sphere nearestSphere;

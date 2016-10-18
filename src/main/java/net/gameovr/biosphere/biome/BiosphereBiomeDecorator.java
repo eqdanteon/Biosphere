@@ -33,8 +33,8 @@ public class BiosphereBiomeDecorator extends BiomeDecorator{
         else
         {
             this.chunkProviderSettings = ChunkProviderSettings.Factory.jsonToFactory(worldIn.getWorldInfo().getGeneratorOptions()).build();
-            // this value is used in genDecorations, which should contain origin Y. Adjust down 2 to sphere ground level
-            pos.add(0, -2, 0);
+            // this value is used in genDecorations, which should contain origin Y. Adjust to sphere ground level
+            pos.add(0, nearestSphere.getSphereGroundLevel(), 0);
             this.chunkPos = pos;
             this.dirtGen = new WorldGenMinable(Blocks.DIRT.getDefaultState(), this.chunkProviderSettings.dirtSize);
             this.gravelGen = new WorldGenMinable(Blocks.GRAVEL.getDefaultState(), this.chunkProviderSettings.gravelSize);

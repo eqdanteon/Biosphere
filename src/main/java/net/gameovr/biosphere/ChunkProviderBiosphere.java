@@ -312,13 +312,12 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
 
                 // hand over to the biome to decorate itself
-                //Biome.decorate(this.world, this.rand, new BlockPos(x, nearestSphere.getOrigin().getY(), z));
                 BiosphereBiomeDecorator bioDecorator = new BiosphereBiomeDecorator(nearestSphere);
                 bioDecorator.decorate(this.world, this.rand, Biome, new BlockPos(x, nearestSphere.getOrigin().getY(), z));
 
                 // add animals
                 if (TerrainGen.populate(this, world, rand, chunkX, chunkZ, false, ANIMALS)) {
-                    WorldEntitySpawner.performWorldGenSpawning(this.world, Biome, x + 8, z + 8, 16, 16, this.rand);
+                    BiosphereWorldEntitySpawner.performWorldGenSpawning(this.world, Biome, x + 8, z + 8, 16, 16, this.rand, nearestSphere);
                 }
 
             }
