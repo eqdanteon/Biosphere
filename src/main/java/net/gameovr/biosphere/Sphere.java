@@ -19,6 +19,7 @@ public class Sphere {
     private boolean hasLake = false;
     public BlockPos startBridgeConnection;
     public BlockPos endBridgeConnection;
+    public BlockPos[] Connections = new BlockPos[4];
     public Vec3d bridgeConnection;
     public ArrayList<BlockPos> bridgeBlocks;
 
@@ -47,6 +48,10 @@ public class Sphere {
         this.origin = origin;
         this.radius = radius;
         this.originChunk = chunk;
+        Connections[0] = origin.north(radius).down(3);
+        Connections[1] = origin.east(radius).down(3);
+        Connections[2] = origin.south(radius).down(3);
+        Connections[3] = origin.west(radius).down(3);
     }
 
     public int getDistanceFromOrigin(BlockPos blockpos) {

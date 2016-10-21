@@ -129,35 +129,34 @@ public class SphereManager {
 
             // current sphere
             Sphere cs = BiosphereWorldType.spheres.get(i);
-            if(cs.bridgeConnection == null){
-                // get closest sphere to current sphere
-                Sphere cs1 = getNearestSphere(cs.getOrigin());
-
-                //cs.bridgeConnection = getBridgeConnectionVector(cs, cs1);
-
-                // set ground level down one block
-                BlockPos startGroundLevel = new BlockPos(cs.getOrigin().getX(), cs.getOrigin().getY() - 3, cs.getOrigin().getZ());
-                BlockPos endGroundLevel = new BlockPos(cs1.getOrigin().getX(), cs1.getOrigin().getY() - 3, cs1.getOrigin().getZ());
-
-                // get vector between origins at ground level
-                Vec3i line = endGroundLevel.subtract(startGroundLevel);
-                Vec3d vector = new Vec3d(line);
-                Vec3d normal = vector.normalize();
-                // get distance from origin to sphere edge (radius)
-                double dx_start = normal.xCoord * cs.getRadius();
-                double dz_start = normal.zCoord * cs.getRadius();
-                double dx_end = normal.xCoord * cs1.getRadius();
-                double dz_end = normal.zCoord * cs1.getRadius();
-                // find the connection points
-                cs.startBridgeConnection = new BlockPos(startGroundLevel.getX() + dx_start, startGroundLevel.getY(), startGroundLevel.getZ() + dz_start);
-                cs.endBridgeConnection = new BlockPos(endGroundLevel.getX() - dx_end, endGroundLevel.getY(), endGroundLevel.getZ() - dz_end);
-                // create new vector representing the connection points with correct length
-                Vec3i connectLine = cs.endBridgeConnection.subtract(cs.startBridgeConnection);
-
-                // store this vector in sphere for future reference
-                cs.bridgeConnection = new Vec3d(connectLine);
-
+            Sphere cs1 = getNearestSphere(cs.getOrigin());
+            BlockPos startGroundLevel = null;
+            BlockPos endGroundLevel = null;
+            double minDistance = 100000;
+            for (int s = 0; s < cs.Connections.length; s++) {
+                for (int e = 0; e < cs1.Connections.length; e++) {
+                    double distance = cs.Connections[s].getDistance(cs1.Connections[e].getX(),cs1.Connections[e].getY(),cs1.Connections[e].getZ());
+                    if (distance < minDistance){
+                        minDistance = distance;
+                        startGroundLevel = cs.Connections[s];
+                        endGroundLevel = cs1.Connections[e];
+                    }
+                }
             }
+
+            // get vector between origins at ground level
+            Vec3i line = endGroundLevel.subtract(startGroundLevel);
+            Vec3d vector = new Vec3d(line);
+            Vec3d normal = vector.normalize();
+
+            cs.startBridgeConnection = startGroundLevel;
+            cs.endBridgeConnection = endGroundLevel;
+
+            // create new vector representing the connection points with correct length
+            Vec3i connectLine = cs.endBridgeConnection.subtract(cs.startBridgeConnection);
+
+            // store this vector in sphere for future reference
+            cs.bridgeConnection = new Vec3d(connectLine);
 
             // find all the blocks that make up the bridge
             cs.bridgeBlocks = getBridgeBlocks(cs.startBridgeConnection, cs.endBridgeConnection, cs.bridgeConnection);
@@ -166,40 +165,9 @@ public class SphereManager {
 
     }
 
-    private Vec3d getBridgeConnectionVector(Sphere startOrigin, Sphere endOrigin){
-
-        // set ground level down one block
-        BlockPos startGroundLevel = startOrigin.getOriginAtGroundLevel();
-        startGroundLevel.add(0, -1, 0);
-
-        BlockPos endGroundLevel = endOrigin.getOriginAtGroundLevel();
-        endGroundLevel.add(0, -1, 0);
-        // get vector between origins at ground level
-        Vec3i line = endGroundLevel.subtract(startGroundLevel);
-        Vec3d vector = new Vec3d(line);
-        Vec3d normal = vector.normalize();
-        // get distance from origin to sphere edge (radius)
-        double dx_start = normal.xCoord * startOrigin.getRadius();
-        double dz_start = normal.zCoord * startOrigin.getRadius();
-        double dx_end = normal.xCoord * endOrigin.getRadius();
-        double dz_end = normal.zCoord * endOrigin.getRadius();
-        // find the connection points
-        BlockPos startConnectPoint = new BlockPos(startGroundLevel.getX() - dx_start, startGroundLevel.getY(), startGroundLevel.getZ() - dz_start);
-        BlockPos endConnectionPoint = new BlockPos(endGroundLevel.getX() + dx_end, endGroundLevel.getY(), endGroundLevel.getZ() + dz_end);
-        // create new vector representing the connection points with correct length
-        Vec3i connectLine = endConnectionPoint.subtract(startConnectPoint);
-
-        // store this vector in sphere for future reference
-        return new Vec3d(connectLine);
-
-
-
-
-    }
-
     private ArrayList<BlockPos> getBridgeBlocks(BlockPos startPoint, BlockPos endPoint, Vec3d pathIn){
 
-        int bridgeWidth = 4;
+        int bridgeWidth = 1;
 
         Vec3d normal = pathIn.normalize();
         //get all the points on the line which is the bridge
@@ -220,14 +188,8 @@ public class SphereManager {
                 }
             }
 
-
-
         }
 
         return blocks;
     }
-
-
-
-
 }

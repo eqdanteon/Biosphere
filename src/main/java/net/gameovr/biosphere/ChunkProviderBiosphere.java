@@ -127,9 +127,6 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
 
 
     public boolean generateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
-
-       // Biosphere.logger.info("!!!!! Generate Structures was called !!!!!");
-
         return true;
     }
 
@@ -144,51 +141,6 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
     }
 
     public void recreateStructures(Chunk chunkIn, int chunkX, int chunkZ) {
-        //Biosphere.logger.info("!!!!! Recreate Structures was called !!!!!");
-
-        // divide chunk into 16 subchunks in y direction
-        for (int subChunkY = 0; subChunkY < 16; ++subChunkY) {
-
-            BlockPos referenceBlock = ChunkCalculator.getSubChunkCenterPos(chunkX, subChunkY, chunkZ);
-            nearestSphere = spheremanager.getNearestSphere(referenceBlock);
-
-
-
-            // subchunk is 16 blocks high in y direction, index as jy
-            for (int blockY = 0; blockY < 16; ++blockY) {
-
-                // subchunk is 16 blocks long in x direction, index as jx
-                for (int subChunkX = 0; subChunkX < 16; ++subChunkX) {
-
-                    // subchunk is 16 blocks long in z direction, index as jz
-                    for (int subChunkZ = 0; subChunkZ < 16; ++subChunkZ) {
-
-                        int currentBlockX = (chunkX * 16) + subChunkX;
-                        int currentBlockY = (subChunkY * 16) + blockY;
-                        int currentBlockZ = (chunkZ * 16) + subChunkZ;
-                        BlockPos currentBlockPos = new BlockPos(currentBlockX, currentBlockY, currentBlockZ);
-
-                        // build bridge
-                        if(nearestSphere.startBridgeConnection != null && nearestSphere.endBridgeConnection != null) {
-
-                            if (currentBlockPos.equals(nearestSphere.startBridgeConnection) || currentBlockPos.equals(nearestSphere.endBridgeConnection)) {
-
-                                chunkIn.setBlockState(currentBlockPos, Blocks.EMERALD_BLOCK.getDefaultState());
-                            }
-
-                            if(nearestSphere.bridgeBlocks.contains(currentBlockPos)){
-                                chunkIn.setBlockState(currentBlockPos, Blocks.EMERALD_BLOCK.getDefaultState());
-                            }
-
-
-
-                        }
-                    }
-                }
-            }
-        }
-
-
     }
 
     public void setWorldFloorOptions(ChunkPrimer chunkprimer, boolean floor, boolean buffer) {
@@ -222,11 +174,6 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
             BlockPos referenceBlock = ChunkCalculator.getSubChunkCenterPos(chunkX, subChunkY, chunkZ);
             nearestSphere = spheremanager.getNearestSphere(referenceBlock);
 
-            Vec3i lineSE = nearestSphere.startBridgeConnection.subtract(nearestSphere.endBridgeConnection);
-            Vec3d line3dSE = new Vec3d(lineSE);
-            Vec3i lineES = nearestSphere.endBridgeConnection.subtract(nearestSphere.startBridgeConnection);
-            Vec3d line3dES = new Vec3d(lineES);
-
             // subchunk is 16 blocks high in y direction, index as jy
             for (int blockY = 0; blockY < 16; ++blockY) {
 
@@ -250,6 +197,13 @@ public class ChunkProviderBiosphere implements IChunkGenerator {
                             chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.STONE.getDefaultState());
                         }
 
+                        // build bridge
+                        if(nearestSphere.startBridgeConnection != null && nearestSphere.endBridgeConnection != null) {
+
+                            if(nearestSphere.bridgeBlocks.contains(currentBlockPos)){
+                                chunkPrimer.setBlockState(subChunkX, currentBlockY, subChunkZ, Blocks.EMERALD_BLOCK.getDefaultState());
+                            }
+                        }
                     }
                 }
             }
